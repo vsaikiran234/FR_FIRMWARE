@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>FR Firmware Uploader</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            gold: '#FFD700',
+                            dark: '#1E1E1E',
+                            grey: '#2E2E2E'
+                        },
+                        fontFamily: {
+                            sans: ['Poppins', 'sans-serif']
+                        }
+                    }
+                }
+            }
+        </script>
+        <style>
+          body { user-select: none; }
+            body {
+                background: linear-gradient(135deg, #2E2E2E 25%, #1E1E1E 100%);
+                animation: fadeIn 1s ease-in-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+        </style>
+    </head>
+  
+    <body class="text-gold font-sans p-6 flex flex-col items-center min-h-screen">
+        <nav class="w-full bg-grey p-4 shadow-lg rounded-lg text-center text-xl font-bold">
+            FR Firmware Uploader
+        </nav>
+        <div class="mt-8 p-6 bg-dark rounded-xl shadow-lg w-full max-w-lg">
+            <h2 class="text-2xl font-semibold text-center mb-4">Has External Temp Sensor?</h2>
+            <label class="flex items-center justify-center space-x-3">
+                <input type="checkbox" id="externalTempSensor" class="w-5 h-5"> <span>Yes</span>
+            </label>
+            <h2 class="text-2xl font-semibold text-center mt-6 mb-4">Select COM Port and Upload</h2>
+            <form name="uploadForm" action="/upload" method="post" onsubmit="submitForm(event);" class="text-center">
+                <select id="comPortSelect" name="com_port" class="w-full p-3 rounded-lg bg-grey text-gold shadow-md mb-4">
+                    <option value="">Select COM Port</option>
+                    {% for port in ports %}
+                    <option value="{{ port.device }}">{{ port.device }}</option>
+                    {% endfor %}
+                </select>
+                <input type="hidden" id="hasExternalTempSensor" name="has_external_temp_sensor" value="0">
+                <input type="submit" id="uploadButton" value="Upload" class="w-full p-3 bg-gold text-dark font-bold rounded-lg shadow-md cursor-pointer transition-transform transform hover:scale-105">
+            </form>
+            <form name="refreshPortsForm" action="/ports" method="get" onsubmit="submitForm(event);" class="text-center mt-4">
+                <input type="submit" value="Check Ports" class="w-full p-3 bg-grey text-gold font-bold rounded-lg shadow-md cursor-pointer transition-transform transform hover:scale-105">
+            </form>
+            <p id="statusMessage" class="text-center mt-4 font-semibold"></p>
+        </div>
+        <script>
+            function submitForm(e) {
+                e.preventDefault();
+                const form = e.target;
+                const statusMessage = document.getElementById('statusMessage');
+                statusMessage.innerText = form.name === 'uploadForm' ? 'Uploading...' : 'Checking ports...';
+
+                const method = form.method.toUpperCase();
+                let url = form.action;
+                let options = { method: method, headers: {} };
+
+                if (method === "POST") {
+                    const formData = new FormData(form);
+                    options.body = formData;
+                }
+
+                fetch(url, options)
+                    .then(response => response.json())
+                    .then(data => statusMessage.innerText = data.message)
+                    .catch(error => {
+                        console.error('Fetch error:', error);
+                        statusMessage.innerText = 'An error occurred.';
+                    });
+            }
+            function checkComPortSelected() {
+                document.getElementById('uploadButton').disabled = document.getElementById('comPortSelect').value === "";
+            }
+            document.getElementById('externalTempSensor').addEventListener('change', function() {
+                document.getElementById('hasExternalTempSensor').value = this.checked ? '1' : '0';
+            });
+          
+        </script>
+    </body>
+</html>
